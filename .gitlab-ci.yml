@@ -5,6 +5,7 @@ stages:
 variables:
   APP_NAME: tibero-exporter
   VERSION: 1.0.0-${CI_COMMIT_SHORT_SHA}
+  HELM_REPO_URL: "https://$HELM_REPO_HOST/$HELM_REPO_PATH.git"
 
 docker-build:
   stage: dockerize
@@ -24,9 +25,8 @@ docker-build:
       fi
   after_script:
     - docker rmi -f $(docker images -q $CI_REGISTRY_IMAGE)
-  # Run this job in a branch where a Dockerfile exists
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "main"
       exists:
         - Dockerfile
 
@@ -36,8 +36,9 @@ kube-deploy:
     - sudo apt-get update -y && sudo apt-get install -y git
     - git config --global user.email "ci@example.com"
     - git config --global user.name "GitLab CI"
-    - git clone https://$HELM_REPO_USER:$HELM_REPO_TOKEN@gitlab.sungsic.synology.me/sungsic/k8s.git
-    - cd k8s/$APP_NAME
+    - echo -e "machine $HELM_REPO_HOST\nlogin $HELM_REPO_USER\npassword $HELM_REPO_TOKEN" > ~/.netrc
+    - git clone $HELM_REPO_URL
+    - cd $HELM_REPO_DIR/$APP_NAME
     - pwd
   script:
     - echo "Updating Helm chart version..."
@@ -47,7 +48,7 @@ kube-deploy:
     - git commit -m "Update $APP_NAME Helm chart to version $VERSION"
     - git push origin HEAD:main
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "main"
  
 
  
