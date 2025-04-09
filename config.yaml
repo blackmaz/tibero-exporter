@@ -1,0 +1,33 @@
+default:
+  log_level: "INFO"
+  exporter:
+    port: 9000
+
+  databases:
+    - name: HUNITEST
+      host: 192.168.0.10
+      port: 8000
+      sid: HUNITEST
+      username: "***********"
+      password: "***********"
+      jdbc_jar: lib/tibero6-jdbc.jar
+      driver: com.tmax.tibero.jdbc.TbDriver
+
+  metrics:
+    tibero_up:
+      name: tibero_up
+      description: Tibero database is up and running
+      labels: []
+      query: "SELECT 1 FROM DUAL"
+
+    tibero_sessions_total:
+      name: tibero_sessions_total
+      description: Total number of sessions
+      labels: []
+      query: "SELECT COUNT(*) FROM V$SESSION"
+
+    tibero_active_sessions:
+      name: tibero_active_sessions
+      description: Number of active sessions
+      labels: []
+      query: "SELECT COUNT(*) FROM V$SESSION WHERE STATUS = 'ACTIVE'"

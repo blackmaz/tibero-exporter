@@ -1,0 +1,53 @@
+stages:
+  - dockerize
+  - deploy
+
+variables:
+  APP_NAME: tibero-exporter
+  VERSION: 1.0.0-${CI_COMMIT_SHORT_SHA}
+
+docker-build:
+  stage: dockerize
+  before_script:
+    - echo "Logging in to Docker registry"
+    - echo $VERSION
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+  script:
+    - echo "Docker build"
+    - echo $CI_REGISTRY_IMAGE:$VERSION
+    - docker build --pull -t $CI_REGISTRY_IMAGE:$VERSION .
+    - docker push $CI_REGISTRY_IMAGE:$VERSION
+    - |
+      if [[ $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH ]]; then
+        docker tag $CI_REGISTRY_IMAGE:$VERSION $CI_REGISTRY_IMAGE:latest
+        docker push $CI_REGISTRY_IMAGE:latest
+      fi
+  after_script:
+    - docker rmi -f $(docker images -q $CI_REGISTRY_IMAGE)
+  # Run this job in a branch where a Dockerfile exists
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_BRANCH
+      exists:
+        - Dockerfile
+
+kube-deploy:
+  stage: deploy
+  before_script:
+    - sudo apt-get update -y && sudo apt-get install -y git
+    - git config --global user.email "ci@example.com"
+    - git config --global user.name "GitLab CI"
+    - git clone https://$HELM_REPO_USER:$HELM_REPO_TOKEN@gitlab.sungsic.synology.me/sungsic/k8s.git
+    - cd k8s/$APP_NAME
+    - pwd
+  script:
+    - echo "Updating Helm chart version..."
+    - sed -i "s/^version:.*/version:\ $VERSION/" Chart.yaml
+    - sed -i "s/tag:.*/tag:\ \"$VERSION\"/" values.yaml
+    - git add Chart.yaml values.yaml
+    - git commit -m "Update $APP_NAME Helm chart to version $VERSION"
+    - git push origin HEAD:main
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_COMMIT_BRANCH
+ 
+
+ 
