@@ -22,6 +22,7 @@ COPY exporter /exporter
 COPY config /config
 COPY lib /lib
 COPY main.py .
+COPY common.py .
 COPY config.yaml .
 
 ENV ENV=PRD
